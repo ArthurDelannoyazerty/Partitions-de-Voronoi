@@ -8,14 +8,14 @@ addPointMode = 1
 listePoint = [] #liste sites
 listeCentre = [] # liste centre des cercles inscrits
 listeBord = [] # liste points au bord du cadre
-
+listePointFlotant = [] # les coordoné d'un point en déplacement
+enClick=0
 
 ##click
 def click(event):
     global listePoint
+    global enClick
     x,y=event.x,event.y
-    print(x)
-    print(y)
     #print(addPointMode)
     if(addPointMode==1):
         cnv.create_rectangle(x-2, y-2, x+2, y+2, fill='red')
@@ -23,9 +23,38 @@ def click(event):
         clearL()
         if (len(listePoint)>1):
             calcul()
+    else:
+        enClick=1
 
-    #print(listePoint)
-    #print("")
+
+##bouge
+def bouge(event):
+    global listePointFlotant
+    global listePoint
+    if (addPointMode==0) and (enClick==1):
+        x,y = event.x , event.y
+        #c la ou tu va mettre le changement de point, comnece par la distance souris/point dans listePoint
+        minD=300
+        T=30
+        for i in range(len(listePoint)):
+            a=listePoint[i]
+            distance= sqrt((x-a[0])**2 + (y-a[1])**2)
+            if (distance<=minD):
+                minD=distance
+                pt=i
+        if (minD<=T):
+            a=listePoint[pt]
+            a[0]=x
+            a[1]=y
+            clearL()
+            calcul()
+
+
+##unclick
+def unclick(event) :
+    global enClick
+    enClick=0
+
 
 ##clear
 def clear():
@@ -57,7 +86,6 @@ def clearL():
     for i in range(len(listePoint)):
         a=listePoint[i]
         cnv.create_rectangle(a[0]-2,a[1]-2,a[0]+2,a[1]+2, fill='red')
-        print(a)
 
 ##addPointMode
 def addPointModeDef():
@@ -68,7 +96,6 @@ def addPointModeDef():
     elif (addPointMode==1):
         addPointMode=0
         texte = cnv.create_text(50,10,text='Add Point Mode', fill='red')
-    print(addPointMode)
 
 ##Calcul
 def calcul():
@@ -188,12 +215,6 @@ def calcul():
         if i not in newListeBord:
             newListeBord.append(i)
 
-    print('listePoint')
-    print(listePoint)
-    print('newListeCentre')
-    print(newListeCentre)
-    print('newListeBord')
-    print(newListeBord)
 
     # on prend un centre ou un bord, on calcule sa distance à tous les points :
     # soit 2 points à la même distance = médiane
@@ -215,17 +236,11 @@ def calcul():
         for j in range(len(listeTemp)):
             for k in range(len(listeTemp)):
                 if j!=k:
-                    if (listeTemp[j] == listeTemp[k]): # marge?
+                    if (round(listeTemp[j]) == listeTemp[k]): # marge?
                         setTemp2.add(j)
                         setTemp2.add(k) # ajout des site equidistants
         listeRelier.append(list(setTemp2))
 
-
-
-    print('listeCentre')
-    print(listeCentre)
-    print('listeRelier')
-    print(listeRelier)
 
     for i in range(len(listeRelier)):
         for j in range(len(listeRelier)):
@@ -234,7 +249,6 @@ def calcul():
                 l1=listeRelier[i]
                 l2=listeRelier[j]
                 lTemp=list(set(l1).intersection(l2))
-                print(lTemp)
                 if len(lTemp)>=2:
                     a=listeCentre[i]
                     b=listeCentre[j]
@@ -267,7 +281,9 @@ clear.pack(side='right')
 
 texte = cnv.create_text(50,10,text='Add Point Mode', fill='green')
 
-cnv.bind('<Button>', click)
+cnv.bind('<Button-1>', click)
+cnv.bind('<Motion>', bouge)
+cnv.bind('<ButtonRelease-1>', unclick )
 
 
 fen.mainloop()
